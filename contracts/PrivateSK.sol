@@ -96,8 +96,18 @@ contract PrivateSK is ERC721{
     }
 
     function withdraw() public{
-        require(msg.sender == creator, "Only the creator can withdraw!");
+        require((msg.sender == creator) || (adminAddresses[msg.sender], "You cannot perform this action!");
         require(address(this).balance > 0 wei, "This contract has no founds :C");
         payable(creator).transfer(address(this).balance);
+    }
+
+    function addAdmin(address _admin) public{
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        adminAddresses[_admin] = true;
+    }
+
+    function removeAdmin(address _admin) public{
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        adminAddresses[_admin] = false;
     }
 }
