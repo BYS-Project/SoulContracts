@@ -10,14 +10,18 @@ contract PrivateSK is ERC721{
     uint256 internal normalPrice;
     uint256 internal normalMinted;
     uint256 internal normalBound;
+    string internal normalDefaultURI;
     // OP Variables
     uint256 internal opPrice;
     uint256 internal opMinted;
     uint256 internal opBound;
     uint256 internal opMintLimit;
+    string internal opDefaultURI;
     // Other Variables
     address internal creator;
     mapping(uint256 => string) internal tokens;
+    // Admin privileges
+    mapping(address => bool) internal adminAddresses;
 
     constructor() ERC721("BYS_Project_PrivateSK", "BYSP"){
         creator = msg.sender;
@@ -31,6 +35,9 @@ contract PrivateSK is ERC721{
         // OP: 0.15 ether = 150 milliether =  = 150.000.000 gwei
         normalPrice = 50000000 gwei;
         opPrice = 150000000 gwei;
+        // Default URIs
+        normalDefaultURI = "";
+        opDefaultURI = "";
     }
 
     // Minting
@@ -70,6 +77,10 @@ contract PrivateSK is ERC721{
     function getNormalPrice() public view returns (uint256){
         return normalPrice;
     }
+    function setNormalPrice(uint256 _normalPrice) public{
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        normalPrice = _normalPrice;
+    }
     function getOPMinted() public view returns (uint256){
         return opMinted; // Returns the amount of SK minted with the OP key -> Max will be 3000; If you want to number of key used do getOPMinted()/getOPMintLimit()
     }
@@ -79,9 +90,13 @@ contract PrivateSK is ERC721{
     function getOPPrice() public view returns (uint256){
         return opPrice;
     }
+    function setOPPrice(_opPrice) public{
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        opPrice = _opPrice;
+    }
 
     function withdraw() public{
-        require(msg.sender == creator, "You cannot perform this function");
+        require(msg.sender == creator, "Only the creator can withdraw!");
         require(address(this).balance > 0 wei, "This contract has no founds :C");
         payable(creator).transfer(address(this).balance);
     }
