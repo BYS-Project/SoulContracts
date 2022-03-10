@@ -6,12 +6,6 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract PrivateSK is ERC721{
 
-    // Da discutere:
-    /* 
-        1) Il contratto accetta i soldi oppure viene fatto a prescindere da un altro? Check
-        2) Già accordato, da ricordarmi: quanto costano le normal e le op? Check
-    */
-
     // Normal Variables
     uint256 internal normalPrice;
     uint256 internal normalMinted;
