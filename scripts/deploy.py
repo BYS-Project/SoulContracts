@@ -1,9 +1,10 @@
 from scripts.commonScripts import getAccount
-from brownie import PrivateSK
+from brownie import SoulKey, Soul
 
 def deploy():    
     account = getAccount()
-    PrivateSK.deploy({"from" : account})
+    SoulKey.deploy({"from" : account})
+    Soul.deploy({"from" : account})
 
 def main():
     deploy()

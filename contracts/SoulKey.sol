@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract PrivateSK is ERC721{
+contract SoulKey is ERC721{
 
     // To Do:
     /*
@@ -30,7 +30,7 @@ contract PrivateSK is ERC721{
     // Admin privileges
     mapping(address => bool) internal adminAddresses;   // List of addresses with admin privilege
     // Contructor. Empty arguments! Everything must be setted with setter/getter methods
-    constructor() ERC721("BYS_Project_PrivateSK", "BYSP"){
+    constructor() ERC721("Soul Key", "SOUK"){
         creator = msg.sender;
         normalMinted = 0;
         normalBound = 3000;
@@ -43,8 +43,8 @@ contract PrivateSK is ERC721{
         normalPrice = 50000000 gwei;
         opPrice = 150000000 gwei;
         // Default URIs
-        normalDefaultURI = "";
-        opDefaultURI = "";
+        normalDefaultURI = "default_normal";
+        opDefaultURI = "default_op";
     }
     // Minting of Normal keys
     function mintSKN(address _to, string memory _uri) public payable{
@@ -52,7 +52,7 @@ contract PrivateSK is ERC721{
         require(msg.value >= normalPrice, "You must specify a greater amount!");
         uint256 tokenSupply = normalMinted + opMinted;
         _mint(_to, tokenSupply);
-        if(equals(_uri, "")){
+        if(!equals(_uri, "")){
             tokens[tokenSupply] = _uri;
         }else{
             tokens[tokenSupply] = normalDefaultURI;
@@ -66,7 +66,7 @@ contract PrivateSK is ERC721{
         for(uint256 i = 0; i < opMintLimit; i++){
             uint256 tokenSupply = normalMinted + opMinted;
             _mint(_to, tokenSupply);
-            if(equals(_uri, "")){
+            if(!equals(_uri, "")){
                 tokens[tokenSupply] = _uri;
             }else{
                 tokens[tokenSupply] = opDefaultURI;
@@ -78,7 +78,7 @@ contract PrivateSK is ERC721{
     function tokenURI(uint256 _tokenId) public view override returns (string memory) {
         uint256 tokenSupply = normalMinted + opMinted;
         require(_tokenId < tokenSupply, "The token specified does not exists!");
-        require(bytes(tokens[_tokenId]).length > 0, "Cannot find the specified token");
+        // require(bytes(tokens[_tokenId]).length > 0, "Cannot find the specified token");
         return tokens[_tokenId];
     }
     // Getters & Setters
@@ -108,7 +108,7 @@ contract PrivateSK is ERC721{
     }
     function setNormalDefaultURI(string memory _normalDefaultURI) public{
         require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
-        require(equals(_normalDefaultURI, ""), "The URI must not be null!");
+        require(!equals(_normalDefaultURI, ""), "The URI must not be null!");
         normalDefaultURI = _normalDefaultURI;
     }
         // For OP keys
@@ -141,7 +141,7 @@ contract PrivateSK is ERC721{
     }
     function setOPDefaultURI(string memory _opDefaultURI) public{
         require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
-        require(equals(_opDefaultURI, ""), "The URI must not be null!");
+        require(!equals(_opDefaultURI, ""), "The URI must not be null!");
         opDefaultURI = _opDefaultURI;
     }
     // Withdraw function
@@ -160,7 +160,7 @@ contract PrivateSK is ERC721{
         adminAddresses[_admin] = false;
     }
     // Utility Functions
-    function equals(string memory a, string memory b) internal view returns (bool) {
+    function equals(string memory a, string memory b) internal pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 }
