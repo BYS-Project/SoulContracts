@@ -2,5 +2,5 @@
 Soul Key
 
 ## Files
-Deploy Script [here](./scripts/deploy.py)
-Smart Contract [here](./contracts/PrivateSK.sol)
+- Deploy Script [here](./scripts/deploy.py)
+- Smart Contract [here](./contracts/PrivateSK.sol)
