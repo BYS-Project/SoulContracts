@@ -1,0 +1,12 @@
+dotenv: .env
+wallets:
+  fromKey: ${PRIVATE_KEY}
+infura:
+  link: ${WEB3_INFURA_PROJECT_ID}
+
+Sdependencies:
+  - "OpenZeppelin/openzeppelin-contracts@4.5.0"
+compiler:
+  solc:
+    remappings:
+      - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.5.0"
