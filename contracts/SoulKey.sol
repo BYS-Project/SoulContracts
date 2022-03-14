@@ -1,8 +1,15 @@
+
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+
+interface Soul{
+    function mint(address _to, string memory _uri) external payable;
+    function tokenURI(uint256 _tokenId) external view returns (string memory);
+    function returnSoul(address _to) external;
+}
 
 contract SoulKey is ERC721{
 
@@ -11,6 +18,7 @@ contract SoulKey is ERC721{
         Find a decent names for "normal" and "op" keys!
         Does every metadata be different?
         Discuss about "The limit normal keys cannot be modified"
+        Aggiungi royalties (2.5%) per ogni trasferimento
     */
 
     // Normal key Variables
@@ -29,6 +37,8 @@ contract SoulKey is ERC721{
     mapping(uint256 => string) internal tokens;         // Mapping of the tokens' numbers with the relative URI
     // Admin privileges
     mapping(address => bool) internal adminAddresses;   // List of addresses with admin privilege
+    // Other smart contract
+    address internal soul;
     // Contructor. Empty arguments! Everything must be setted with setter/getter methods
     constructor() ERC721("Soul Key", "SOUK"){
         creator = msg.sender;
@@ -91,7 +101,7 @@ contract SoulKey is ERC721{
         return normalPrice;
     }
     function setNormalPrice(uint256 _normalPrice) public{
-        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action! 00");
         require(_normalPrice > 0, "The price must be greater than zero!");
         normalPrice = _normalPrice;
     }
@@ -107,7 +117,7 @@ contract SoulKey is ERC721{
         return normalDefaultURI;
     }
     function setNormalDefaultURI(string memory _normalDefaultURI) public{
-        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action! 01");
         require(!equals(_normalDefaultURI, ""), "The URI must not be null!");
         normalDefaultURI = _normalDefaultURI;
     }
@@ -116,7 +126,7 @@ contract SoulKey is ERC721{
         return opPrice;
     }
     function setOPPrice(uint256 _opPrice) public{
-        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action! 02");
         require(_opPrice > 0, "The price must be greater than zero!");
         opPrice = _opPrice;
     }
@@ -132,7 +142,7 @@ contract SoulKey is ERC721{
         return opMintLimit;
     }
     function setOPMintLimit(uint256 _opMintLimit) public{
-        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action! 03");
         require(_opMintLimit > 0, "The mint limit must be greater than zero!");
         opMintLimit = _opMintLimit;
     }
@@ -140,27 +150,51 @@ contract SoulKey is ERC721{
         return opDefaultURI;
     }
     function setOPDefaultURI(string memory _opDefaultURI) public{
-        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action! 04");
         require(!equals(_opDefaultURI, ""), "The URI must not be null!");
         opDefaultURI = _opDefaultURI;
     }
+
+
+    function getSoul() public view returns (address){
+        return soul;
+    }
+    function setSoul(address _newAddress) public{
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action! 05");
+        soul = _newAddress;
+    }
+
+
+
     // Withdraw function
     function withdraw() public{
-        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action! 06");
         require(address(this).balance > 0 wei, "This contract has no founds :C");
         payable(creator).transfer(address(this).balance);
     }
     // Admin functions
     function addAdmin(address _admin) public{
-        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action! 07");
         adminAddresses[_admin] = true;
     }
     function removeAdmin(address _admin) public{
-        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action!");
+        require((msg.sender == creator) || (adminAddresses[msg.sender]), "You cannot perform this action! 08");
         adminAddresses[_admin] = false;
     }
     // Utility Functions
     function equals(string memory a, string memory b) internal pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
+    // Transfer function
+    function convertToSoul(address _from,uint256 _tokenId) public {
+        require(_isApprovedOrOwner(_msgSender(), _tokenId), "ERC721: transfer caller is not owner nor approved");
+
+        Soul sc = Soul(soul);
+
+        _transfer(_from, soul, _tokenId);
+
+        sc.returnSoul(_from);
+
+    }
+    // MOLTI METODI HANNO LA FIRMA SEMPLIFICABILE CON msg.sender
 }

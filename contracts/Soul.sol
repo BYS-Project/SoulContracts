@@ -10,6 +10,7 @@ contract Soul is ERC721{
     /*
         1) URI choosen from the user or from the contact?
         Optimize code. F.e. not all the functions are going to be needed on the final smart contract. Discuss them before the upload on mainnet
+        Guardare OpenSea se supporta solo contratti ERC o anche custom
     */
 
     uint256 internal tokenSupply;
@@ -17,11 +18,13 @@ contract Soul is ERC721{
     uint256 internal tokenPrice;
     mapping(uint256 => string) internal tokens;
     address internal creator;
+    address internal soulKeyContractAddress;
 
     constructor() ERC721("Soul", "SOU"){
         creator = msg.sender;
     }
 
+    // MINT DEVE AVERE IL PREZZO DI UN SOUL
     function mint(address _to, string memory _uri) public payable{
         require(tokenSupply < tokenBound, "Normal sold out!");
         require(msg.value >= tokenPrice, "You must specify a greater amount!");
@@ -36,5 +39,11 @@ contract Soul is ERC721{
         return tokens[_tokenId];
     }
 
-    // HOW TO KNOW WHEN I RECEIVE A NFT
+    function returnSoul(address _to) public {
+        // REQUIRE CHE IL TOKEN LO ABBIA IO
+        _mint(_to, tokenSupply);
+        tokens[tokenSupply] = "ipfs://QmUc7QARN2a5fYv1zfMRvEvAo6fZFqwp4LPnPMnXhVjmYU";
+        tokenSupply++;
+    }
+    
 }
