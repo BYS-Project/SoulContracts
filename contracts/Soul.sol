@@ -63,7 +63,7 @@ contract Soul is ERC721_bys{
     // ""
     function tokenURI(uint _tokenId) public view override returns (string memory) {
         require(_tokenId < tokenSupply, "The token specified does not exists!");
-        string memory uri = string(abi.encodePacked(baseURI, "/", BYS_Utils(utils).toString(tokenSupply), ".json"));
+        string memory uri = string(abi.encodePacked(baseURI, "/", BYS_Utils(utils).toString(_tokenId), ".json"));
         require(bytes(uri).length > 0, "Cannot find the specified token");
         return uri;
     }
