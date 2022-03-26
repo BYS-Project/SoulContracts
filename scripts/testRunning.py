@@ -5,8 +5,9 @@ from scripts import commonScripts
 def main():
     # Addresses
     myAddress = "0x705ADdE55cFEfF70FA8F29f191a57c4337aa13f3"
-    soulAddress = "0x2afea04AC8b511a0C13e58B084D7ABD5285FD4F7"
-    soulKeyAddress = "0x6751d1E26934e9066eA9C58d0034e3B663b7b222"
+    utilsAddress = "0x67Bb75F4160766Cb9E55a18B577709B2aC2E2b9a"
+    soulAddress = "0x25FaaC3B8AA4F257c9821F46C1F6f969882D9262"
+    soulKeyAddress = "0x5fc4473400261C91cAd03a3c0840c197551BF86C"
     # Web3 Connection
     url = "https://rinkeby.infura.io/v3/", config["infura"]["link"]
     web3 = Web3(Web3.HTTPProvider(url))
@@ -16,24 +17,49 @@ def main():
     # Getting the Smart Contracts
     soul = Contract.from_abi("Soul", soulAddress, Soul.abi)
     keys = Contract.from_abi("SoulKey", soulKeyAddress, SoulKey.abi)
-    # Calling functions
-    """
-    keys.setBuyable(True, {"from" : account})
-    soul.setBuyable(True, {"from" : account})
-    keys.mintSKN({"from" : account, "value" : 50000000000000000})
-    keys.mintSKOP({"from" : account, "value" : 150000000000000000})
-    keys.setSoulContract(soulAddress, {"from" : account})
-    soul.setSoulKeyContract(soulKeyAddress, {"from" : account})
-    print("Owner sooner: ", keys.ownerOf(0))
-    """
-    # keys.convertToSoul(1, {"from" : account})
-    print("Owner later: ", keys.ownerOf(0))
-    print("Supply: ", keys.getSupply(), "(Normal: ", keys.getNormalMinted(), " Op: ", keys.getOpMinted(), ")")
-    print("Meta: ", keys.tokenURI(0))
-    print("Key type: ", keys.keyType(0, {"from" : account}))
-    print("Meta: ", keys.tokenURI(1))
-    print("Key type: ", keys.keyType(1, {"from" : account})) 
 
-    print("URI 2: ", soul.tokenURI(2))
-    # print("Soul 0 URI: ", soul.tokenURI(0))   
-    # keys.withdraw({"from" : account})
+    cond = True
+    while(cond):
+        print ("1) For minting Normal Key\n2) For minting OP Key\n3) Startup\n4)Owner of\n5)Get Supply\n6) Token URI\n7) Withdraw\n8)Key Type")
+        opt = input("Enter the option: ")
+        print("Opt: ", opt)
+        print("\n----------\n")
+        if(opt == "1"):
+            qty = int(input("Specify the amount to mint: "))
+            keys.mintSKN(qty, {"from" : account, "value" : qty * 50000000000000000})
+        elif (opt == "2"):
+            qty = int(input("Specify the amount to mint: "))
+            keys.mintSKOP(qty, {"from" : account, "value" : qty * 150000000000000000})
+        elif (opt == "3"):
+            keys.setContractOnline(True, {"from" : account})
+            soul.setContractOnline(True, {"from" : account})
+            keys.setSoulContract(soulAddress, {"from" : account})
+            soul.setSoulKeyContract(soulKeyAddress, {"from" : account})
+        elif (opt == "4"):
+            key = int(input("Keys: "))
+            if key >= 0:
+                print("Owner of Keys: ", keys.ownerOf(key))
+            sou = int(input("Soul: "))
+            if sou >= 0:
+                print("Owner of Soul: ", soul.ownerOf(sou))
+        elif (opt == "5"):
+            print("Token Supply Keys: ", keys.getTokenSupply(), " Normal: ", keys.getNormalMinted(), " OP: ", keys.getOpMinted())
+            print("Token Supply Soul: ", soul.getTokenSupply())
+        elif (opt == "6"):
+            key = int(input("Keys: "))
+            if key >= 0:
+                print("Token URI of Keys", keys.tokenURI(key))
+            sou = int(input("Soul: "))
+            if sou >= 0:
+                print("Token URI of Soul", soul.tokenURI(sou))
+        elif (opt == "7"):
+            keys.withdraw({"from" : account})
+            soul.withdraw({"from" : account})
+        elif (opt == "8"):
+            key = int(input("Key number: "))
+            print("Key type of ", key, ": ", keys.keyType(key, {"from" : account}))
+        elif (opt == "9"):
+            tokens = keys.getTokens({"from" : account})
+            print("Tokens: " + list(tokens))
+        elif (opt == "exit"):
+            cond = False

@@ -2,173 +2,180 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./ERC721_bys.sol";
 import "../interfaces/SoulInterface.sol";
+import "../interfaces/UtilsInterface.sol";
 
-contract SoulKey is ERC721{
-    // Key Supply
-    uint256 internal normalMinted;
-    uint256 internal opMinted;
-    // Key URIs
-    string internal keysURI;
+contract SoulKey is ERC721_bys{
     // Key prices
-    uint256 internal normalPrice;
-    uint256 internal opPrice;
-    // Ket mint limits
-    uint256 internal normalMintLimit;
-    uint256 internal opMintLimit;
+    uint private normalPrice;
+    uint private opPrice;
+    // Keys mint limits
+    uint private normalMintLimit;
+    uint private opMintLimit;
     // How many soul have to be minted with an op key?
-    uint256 internal soulMintedWithOpKey;
-    // Owner of the Contract
-    address internal creator;
-    // Token URIs
-    mapping(uint256 => string) internal tokens;
+    uint private soulMintedWithOpKey;
     // Soul Contract address and Soul Contract
-    address internal soulContract;
-    // Are Soul Keys buyable?
-    bool internal buyable;
+    address private soulContract;
+    // Are Soul Keys setContractOnline?
+    bool private contractOnline;
+    // Utils Address
+    address private utils;
+    // Token URIs
+    mapping(uint => uint) private tokens;
+    mapping(uint=> bool) private burnedKeys;
+    // Mint limit for addresses
+    uint private maximumNormalForAddress;
+    uint private maximumOpForAddress;
     // Events
-    event NormalMinted(uint256 normalKeyMinted, address to);
-    event OpMinted(uint256 opKeyMinted, address to);
-    event ConvertedToSoul(uint256 fromSoulKey, address fromAddress);
-    event SoulBuyable(bool _buyable);
-    // When a contract is created it has not a soulContract associated nor a buyable = true status
-    constructor(string memory _keysURI, uint256 _normalPrice, uint256 _opPrice, uint256 _normalMintLimit, uint256 _opMintLimit, uint256 _soulMintedWithOpKey) ERC721("Soul Key", "SOUK"){
-        keysURI = _keysURI;
+    event SoulContractOnline(bool _newStatus);
+    // When a contract is created it has not a soulContract associated nor a contractOnline = true status
+    constructor(string memory _baseURI, uint _normalPrice, uint _opPrice, uint _normalMintLimit, uint _opMintLimit, uint _soulMintedWithOpKey, address _utils, 
+    uint _maximumNormalForAddress, uint _maximumOpForAddress) ERC721_bys("Soul Key", "SOUK"){
+        baseURI = _baseURI;
         normalPrice = _normalPrice;
         opPrice = _opPrice;
         normalMintLimit = _normalMintLimit;
         opMintLimit = _opMintLimit;
         soulMintedWithOpKey = _soulMintedWithOpKey;
-        creator = msg.sender;
-        buyable = false;
+        utils = _utils;
+        maximumNormalForAddress = _maximumNormalForAddress;
+        maximumOpForAddress = _maximumOpForAddress;
+        contractCreator = msg.sender;
     }
     // Mint functions
-    function mintSKN() public payable{
-        require(buyable, "You must wait before buying those keys");
-        require(normalMinted < normalMintLimit, "Normal Keys were sold out!");
-        require(msg.value >= normalPrice, "You must specify a greater amount!");
-        _mint(msg.sender, normalMinted + opMinted);
-        tokens[normalMinted + opMinted] = string(abi.encodePacked(keysURI, "/", toString(normalMinted), "_normal.json"));
-        emit NormalMinted(normalMinted + opMinted, msg.sender);
-        normalMinted++;
+    function mintSKN(uint amount) public payable{
+        require(contractOnline, "You must wait before buying those keys");
+        require(amount > 0, "The amount must be greater than zero");
+        // require(getNormalMinted() + amount < normalMintLimit, "Normal Keys were sold out!");
+        // require(normalBalanceOf(msg.sender) + amount < maximumNormalForAddress, "You cannot buy this amount of keys!");
+        require(msg.value >= normalPrice * amount, "You must specify a greater amount!");
+        _mint(msg.sender, amount);
+
+        tokens[tokenSupply - 1] = 1;
     }
-    function mintSKOP() public payable{
-        require(buyable, "You must wait before buying those keys");
-        require(normalMinted < opMintLimit, "Op Keys were sold out!");
-        require(msg.value >= opPrice, "You must specify a greater amount!");
-        _mint(msg.sender, normalMinted + opMinted);
-        tokens[normalMinted + opMinted] = string(abi.encodePacked(keysURI, "/", toString(opMinted), "_op.json"));
-        emit OpMinted(normalMinted + opMinted, msg.sender);
-        opMinted++;
+    function mintSKOP(uint amount) public payable{
+        require(contractOnline, "You must wait before buying those keys");
+        require(amount > 0, "The amount must be greater than zero");
+        // require(getOpMinted() + amount < opMintLimit, "OP Keys were sold out!");
+        // require(opBalanceOf(msg.sender) + amount < maximumOpForAddress, "You cannot buy this amount of keys!");
+        require(msg.value >= opPrice * amount, "You must specify a greater amount!");
+        _mint(msg.sender, amount);
+        
+        tokens[tokenSupply - 1] = 2;
     }
+
+
     // TokenURI function, used by OpenSea
-    function tokenURI(uint256 _tokenId) public view override returns (string memory) {
-        require(_tokenId < normalMinted + opMinted, "The specified token does not exists!");
-        require(bytes(tokens[_tokenId]).length > 0, "Cannot find the specified token");
-        return tokens[_tokenId];
+    function tokenURI(uint _tokenId) public view override returns (string memory) {
+        require(_tokenId < tokenSupply, "The specified token does not exists!");
+        if(keyType(_tokenId) == 1){
+            return string(abi.encodePacked(baseURI, "/", BYS_Utils(utils).toString(_tokenId), "_normal", ".json"));
+        }else if(keyType(_tokenId) == 2){
+            return string(abi.encodePacked(baseURI, "/", BYS_Utils(utils).toString(_tokenId), "_op", ".json"));
+        }
+        return "";
     }
+
+
     // Converts the Key NFT into a Soul NFT
-    function convertToSoul(uint256 _tokenId) public {
+    function convertToSoul(uint _tokenId) public {
         require(soulContract != address(0), "A Soul Smart Contract is not specified yet!");
-        require(_tokenId < normalMinted + opMinted, "The specified token does not exists!");
+        require(_tokenId < tokenSupply, "The specified token does not exists!");
+        require(burnedKeys[_tokenId] == false, "This key was already used");
         require(_isApprovedOrOwner(msg.sender, _tokenId), "ERC721: transfer caller is not owner nor approved");
         transferFrom(msg.sender, soulContract, _tokenId);
         // From è utile?
         Soul(soulContract).returnSoul(msg.sender, _tokenId);
-        emit ConvertedToSoul(_tokenId, msg.sender);
+        burnedKeys[_tokenId] = true;
     }
+
     // Is the key specified a normal or an op one?
     /*
         1  = Normal
         2  = Op
         0 = Error
     */
-    function keyType(uint256 _tokenId) public view returns (uint256){
-        require(_tokenId < normalMinted + opMinted, "The specified token does not exists!");
-        if(contains(tokens[_tokenId], "_normal")){
-            return 1;
-        }else if(contains(tokens[_tokenId], "_op")){
-            return 2;
-        }else{
-            return 0;
+    function keyType(uint _tokenId) public view returns (uint){
+        require(_tokenId < tokenSupply, "The specified token does not exists!");
+        for(uint i = _tokenId; i < tokenSupply; i++){
+            if(tokens[i] == 1){
+                return 1;
+            }else if(tokens[i] == 2){
+                return 2;
+            }
         }
+        return 0;
     }
+
     // Getters
-    function getSupply() public view returns (uint256){
-        return normalMinted + opMinted;
-    }
-    function getNormalMinted() public view returns (uint256){
+    function getNormalMinted() public view returns (uint){
+        uint normalMinted;
+        uint currentMinted;
+        for(uint i; i < tokenSupply; i++){
+            currentMinted++;
+            if(tokens[i] != 0){
+                if(tokens[i] == 1){
+                    normalMinted += currentMinted;
+                }
+                currentMinted = 0;
+            }
+        }
         return normalMinted;
     }
-    function getOpMinted() public view returns (uint256){
+    function getOpMinted() public view returns (uint){
+        uint opMinted;
+        uint currentMinted;
+        for(uint i; i < tokenSupply; i++){
+            currentMinted++;
+            if(tokens[i] != 0){
+                if(tokens[i] == 2){
+                    opMinted += currentMinted;
+                }
+                currentMinted = 0;
+            }
+        }
         return opMinted;
     }
-    function getSoulMintedWithOpKey() public view returns (uint256){
+
+    function normalBalanceOf(address _address) public view returns (uint){
+        uint balance;
+        for(uint i; i < tokenSupply; i++){
+            if(tokens[i] == 1 && ownerOf(i) == _address){
+                balance++;
+            }
+        }
+        return balance;
+    }
+    function opBalanceOf(address _address) public view returns (uint){
+        uint balance;
+        for(uint i; i < tokenSupply; i++){
+            if(tokens[i] == 2 && ownerOf(i) == _address){
+                balance++;
+            }
+        }
+        return balance;
+    }
+    function getSoulMintedWithOpKey() public view returns (uint){
         return soulMintedWithOpKey;
     }
+
     // Setters
     function setSoulContract(address _soulContract) public{
-        require(msg.sender == creator, "You cannot perform this action!");
+        require(msg.sender == contractCreator, "You cannot perform this action!");
+        require(_soulContract != soulContract, "The specified contract already exists");
         soulContract = _soulContract;
     }
-    function setBuyable(bool _buyable) public{
-        require(msg.sender == creator, "You cannot perform this action!");
-        emit SoulBuyable(_buyable);
-        buyable = _buyable;
+    function setContractOnline(bool _contractOnline) public{
+        require(msg.sender == contractCreator, "You cannot perform this action!");
+        require(_contractOnline != contractOnline, "This value is already specified");
+        emit SoulContractOnline(_contractOnline);
+        contractOnline = _contractOnline;
     }
-
-    // Utils...
-    // Is a string equal to another?
-    function equals(string memory a, string memory b) internal pure returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
-    }
-    // Does a string contain another one?
-    function contains(string memory main, string memory subString) internal pure returns (bool){
-        require(bytes(main).length >= bytes(subString).length, "Error in string comparsions");
-        if(bytes(main).length == bytes(subString).length){
-            return equals(main, subString);
-        }else{
-            for(uint256 i; i < bytes(main).length - bytes(subString).length; i++){
-                if(equals(subString, getSlice(i, bytes(subString).length + i, main))){
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-    // From: https://ethereum.stackexchange.com/questions/52246/solidity-extracting-slicing-characters-from-a-string
-    function getSlice(uint256 begin, uint256 end, string memory text) public pure returns (string memory) {
-        bytes memory a = new bytes(end - begin);
-        for(uint256 i; i < end - begin; i++){
-            a[i] = bytes(text)[begin + i];
-        }
-        return string(a);    
-    }
-    // From: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Strings.sol
-    function toString(uint256 value) internal pure returns (string memory) {
-        if (value == 0) {
-            return "0";
-        }
-        uint256 temp = value;
-        uint256 digits;
-        while (temp != 0) {
-            digits++;
-            temp /= 10;
-        }
-        bytes memory buffer = new bytes(digits);
-        while (value != 0) {
-            digits -= 1;
-            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
-            value /= 10;
-        }
-        return string(buffer);
-    }
-
     // Withdraw function
     function withdraw() public{
-        require(msg.sender == creator, "You cannot perform this action!");
+        require(msg.sender == contractCreator, "You cannot perform this action!");
         require(address(this).balance > 0 wei, "This contract has no funds");
-        payable(creator).transfer(address(this).balance);
+        payable(contractCreator).transfer(address(this).balance);
     }
 }
