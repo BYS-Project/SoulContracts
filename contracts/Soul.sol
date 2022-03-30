@@ -13,8 +13,6 @@ contract Soul is ERC721_bys{
 
         Fare una firma che altrimenti il disma mi copa
 
-        DICHIARE VARIABILI GIA' CHE VADANO BENE NON NEL COSTRUTTORE
-
         POLICY E DOCUMENTAZIONE!!! https://etherscan.io/address/0x348fc118bcc65a92dc033a951af153d14d945312#code
 
         PREVEDERE GIVEAWAY SOUL / SOULKEY
@@ -56,7 +54,7 @@ contract Soul is ERC721_bys{
         require(contractOnline, "You must wait before buying those Souls");
         require(tokenSupply < tokenMintLimit, "Soul were sold out!");
         require(tokenSupply + amount < tokenMintLimit, "Please, specify a smaller amount to buy!");
-        require(balanceOf(msg.sender) < maxSoulPerAddress, "You cannot buy other Souls. Max amount reached!");
+        require(balanceOf(msg.sender)  + amount <= maxSoulPerAddress, "You cannot buy other Souls. Max amount reached!");
         require(msg.value >= tokenPrice * amount, "You must specify a greater amount!");
         _mint(msg.sender, amount);
     }

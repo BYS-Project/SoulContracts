@@ -1,7 +1,6 @@
 from brownie import accounts, network, config
-TEST_ENV = ["ganache-local"]
+TESTNETS = ["rinkeby"]
 def getAccount():
     print("Active network: ", network.show_active())
-    if network.show_active() in TEST_ENV:
-        return accounts[0]
+    return "0x6aC1D3C86DD80C730cbbd333A1A208d4095bc301"
     return accounts.add(config["wallets"]["fromKey"])

@@ -47,8 +47,9 @@ contract SoulKey is ERC721_bys{
     function mintSKN(uint amount) public payable{
         require(contractOnline, "You must wait before buying those keys");
         require(amount > 0, "The amount must be greater than zero");
-        // require(getNormalMinted() + amount < normalMintLimit, "Normal Keys were sold out!");
-        // require(normalBalanceOf(msg.sender) + amount < maximumNormalForAddress, "You cannot buy this amount of keys!");
+        require(getNormalMinted() <= normalMintLimit, "Normal Keys were sold out!");
+        require(getNormalMinted() + amount <= normalMintLimit, "Plase, specify a lower amount of tokens to mint");
+        require(normalBalanceOf(msg.sender) + amount <= maximumNormalForAddress, "You cannot buy this amount of keys!");
         require(msg.value >= normalPrice * amount, "You must specify a greater amount!");
         _mint(msg.sender, amount);
 
@@ -57,8 +58,9 @@ contract SoulKey is ERC721_bys{
     function mintSKOP(uint amount) public payable{
         require(contractOnline, "You must wait before buying those keys");
         require(amount > 0, "The amount must be greater than zero");
-        // require(getOpMinted() + amount < opMintLimit, "OP Keys were sold out!");
-        // require(opBalanceOf(msg.sender) + amount < maximumOpForAddress, "You cannot buy this amount of keys!");
+        require(getOpMinted() <= opMintLimit, "OP Keys were sold out!");
+        require(getOpMinted() + amount <= opMintLimit, "Plase, specify a lower amount of tokens to mint");
+        require(opBalanceOf(msg.sender) + amount <= maximumOpForAddress, "You cannot buy this amount of keys!");
         require(msg.value >= opPrice * amount, "You must specify a greater amount!");
         _mint(msg.sender, amount);
         
@@ -85,7 +87,6 @@ contract SoulKey is ERC721_bys{
         require(burnedKeys[_tokenId] == false, "This key was already used");
         require(_isApprovedOrOwner(msg.sender, _tokenId), "ERC721: transfer caller is not owner nor approved");
         transferFrom(msg.sender, soulContract, _tokenId);
-        // From è utile?
         Soul(soulContract).returnSoul(msg.sender, _tokenId);
         burnedKeys[_tokenId] = true;
     }
@@ -137,21 +138,40 @@ contract SoulKey is ERC721_bys{
         }
         return opMinted;
     }
-
     function normalBalanceOf(address _address) public view returns (uint){
+        uint currentBalance;
         uint balance;
         for(uint i; i < tokenSupply; i++){
-            if(tokens[i] == 1 && ownerOf(i) == _address){
-                balance++;
+            if(ownerOf(i) == _address){
+                if(tokens[i] == 0 || tokens[i] == 1){
+                    currentBalance++;
+                    if(tokens[i] == 1){
+                        balance += currentBalance;
+                        currentBalance = 0;
+                    }
+                }
+                else if(tokens[i] == 2){
+                    currentBalance = 0;
+                }
             }
         }
         return balance;
     }
     function opBalanceOf(address _address) public view returns (uint){
+        uint currentBalance;
         uint balance;
         for(uint i; i < tokenSupply; i++){
-            if(tokens[i] == 2 && ownerOf(i) == _address){
-                balance++;
+            if(ownerOf(i) == _address){
+                if(tokens[i] == 0 || tokens[i] == 2){
+                    currentBalance++;
+                    if(tokens[i] == 2){
+                        balance += currentBalance;
+                        currentBalance = 0;
+                    }
+                }
+                else if(tokens[i] == 1){
+                    currentBalance = 0;
+                }
             }
         }
         return balance;
