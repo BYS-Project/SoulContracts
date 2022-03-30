@@ -70,7 +70,7 @@ contract SoulKey is ERC721_bys{
 
     // TokenURI function, used by OpenSea
     function tokenURI(uint _tokenId) public view override returns (string memory) {
-        require(_tokenId < tokenSupply, "The specified token does not exists!");
+        require(_exists(_tokenId), "The specified token does not exists!");
         if(keyType(_tokenId) == 1){
             return string(abi.encodePacked(baseURI, "/", BYS_Utils(utils).toString(_tokenId), "_normal", ".json"));
         }else if(keyType(_tokenId) == 2){
@@ -83,7 +83,7 @@ contract SoulKey is ERC721_bys{
     // Converts the Key NFT into a Soul NFT
     function convertToSoul(uint _tokenId) public {
         require(soulContract != address(0), "A Soul Smart Contract is not specified yet!");
-        require(_tokenId < tokenSupply, "The specified token does not exists!");
+        require(_exists(_tokenId), "The specified token does not exists!");
         require(burnedKeys[_tokenId] == false, "This key was already used");
         require(_isApprovedOrOwner(msg.sender, _tokenId), "ERC721: transfer caller is not owner nor approved");
         transferFrom(msg.sender, soulContract, _tokenId);
@@ -98,7 +98,7 @@ contract SoulKey is ERC721_bys{
         0 = Error
     */
     function keyType(uint _tokenId) public view returns (uint){
-        require(_tokenId < tokenSupply, "The specified token does not exists!");
+        require(_exists(_tokenId), "The specified token does not exists!");
         for(uint i = _tokenId; i < tokenSupply; i++){
             if(tokens[i] == 1){
                 return 1;

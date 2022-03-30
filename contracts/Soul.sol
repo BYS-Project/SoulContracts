@@ -52,15 +52,15 @@ contract Soul is ERC721_bys{
     // ""
     function mint(uint amount) public payable{
         require(contractOnline, "You must wait before buying those Souls");
-        require(tokenSupply < tokenMintLimit, "Soul were sold out!");
-        require(tokenSupply + amount < tokenMintLimit, "Please, specify a smaller amount to buy!");
+        require(tokenSupply <= tokenMintLimit, "Soul were sold out!");
+        require(tokenSupply + amount <= tokenMintLimit, "Please, specify a smaller amount to buy!");
         require(balanceOf(msg.sender)  + amount <= maxSoulPerAddress, "You cannot buy other Souls. Max amount reached!");
         require(msg.value >= tokenPrice * amount, "You must specify a greater amount!");
         _mint(msg.sender, amount);
     }
     // ""
     function tokenURI(uint _tokenId) public view override returns (string memory) {
-        require(_tokenId < tokenSupply, "The token specified does not exists!");
+        require(_exists(_tokenId), "The token specified does not exists!");
         string memory uri = string(abi.encodePacked(baseURI, "/", BYS_Utils(utils).toString(_tokenId), ".json"));
         require(bytes(uri).length > 0, "Cannot find the specified token");
         return uri;
